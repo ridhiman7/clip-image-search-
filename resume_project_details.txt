@@ -1,0 +1,99 @@
+========================================================
+  RESUME PROJECT DETAILS
+  Semantic Image Search Engine using CLIP & FAISS
+========================================================
+
+PROJECT TITLE:
+  Semantic Image Search Engine
+
+TECH STACK:
+  Python, PyTorch, HuggingFace Transformers, FAISS, Streamlit,
+  OpenAI CLIP (ViT-B/32), NumPy, Pillow, Matplotlib, scikit-learn
+
+SHORT DESCRIPTION (1 line, for project list):
+  Built a semantic image search engine using OpenAI CLIP embeddings
+  and FAISS vector indexing, supporting both text-to-image and
+  image-to-image retrieval with a Streamlit web interface.
+
+----------------------------------------------------------
+BULLET POINTS (use 3-4 of these on your resume)
+----------------------------------------------------------
+
+  • Developed a semantic image retrieval system using OpenAI's CLIP
+    (ViT-B/32) model via HuggingFace Transformers, enabling natural
+    language queries to find visually relevant images from a
+    custom image collection.
+
+  • Implemented a FAISS-backed vector index (supporting Flat, IVF,
+    and IVFPQ index types) for efficient nearest-neighbor search
+    over 512-dimensional L2-normalized CLIP embeddings, enabling
+    sub-second retrieval at scale.
+
+  • Supported dual query modes — text-to-image (encode a natural
+    language description to find matching images) and
+    image-to-image (upload a query image to find semantically
+    similar results) — with cosine similarity scoring and ranked
+    output.
+
+  • Built an interactive Streamlit web UI with a live result grid,
+    adjustable top-k slider, and real-time similarity score display,
+    making the search engine accessible without any CLI knowledge.
+
+  • Designed a modular evaluation pipeline computing standard
+    information retrieval metrics — Precision@k, Recall@k, mAP@k,
+    and Hit Rate@k — across multiple query cut-offs for benchmarking
+    retrieval quality.
+
+  • Engineered a batch-processing pipeline for encoding entire image
+    folders into embeddings with GPU/CPU auto-detection, persistent
+    index saving/loading, and support for multiple image formats
+    (JPG, PNG, WebP, BMP, TIFF, GIF).
+
+----------------------------------------------------------
+LONGER PROJECT DESCRIPTION (for portfolio or LinkedIn)
+----------------------------------------------------------
+
+  Semantic Image Search Engine
+  ----------------------------
+  Designed and built an end-to-end semantic image search system
+  that allows users to search a local image collection using plain
+  English descriptions or by uploading a reference image.
+
+  The core of the system uses OpenAI's CLIP (Contrastive
+  Language-Image Pretraining) model — loaded via HuggingFace
+  Transformers — to encode both images and text into a shared
+  512-dimensional embedding space. Because CLIP is trained on
+  400M image-text pairs, text descriptions and visually matching
+  images are projected close together, enabling zero-shot
+  cross-modal retrieval without any fine-tuning.
+
+  Image embeddings are stored in a FAISS vector index (supporting
+  Flat, IVF, and IVFPQ configurations) for fast approximate
+  nearest-neighbor search. Embeddings are L2-normalized so that
+  inner-product search is equivalent to cosine similarity.
+
+  A Streamlit web application provides a clean browser-based UI
+  where users can switch between text and image query modes,
+  adjust the number of results, and view ranked results with
+  similarity scores in a responsive grid layout.
+
+  An evaluation module computes standard IR metrics (Precision@k,
+  Recall@k, mAP@k, Hit Rate@k) against ground-truth labels,
+  allowing systematic benchmarking of retrieval quality.
+
+----------------------------------------------------------
+KEY CONCEPTS TO MENTION IN AN INTERVIEW
+----------------------------------------------------------
+
+  - Contrastive learning / CLIP: trained to align image and text
+    representations in a shared latent space
+  - Vector similarity search: cosine similarity via inner product
+    on L2-normalized embeddings
+  - FAISS: Facebook AI Similarity Search library; Flat = exact,
+    IVF = inverted file index (faster, approximate),
+    IVFPQ = product quantization (memory-efficient)
+  - Batch inference with PyTorch (torch.no_grad, GPU auto-detect)
+  - Information retrieval metrics: P@k, R@k, mAP@k, Hit Rate@k
+  - Streamlit: fast Python-native web UI framework
+
+========================================================
