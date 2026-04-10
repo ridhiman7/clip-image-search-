@@ -78,6 +78,9 @@ class CLIPEmbedder:
             inputs = self.processor(images=batch, return_tensors="pt", padding=True)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
             embeddings = self.model.get_image_features(**inputs)
+            # Newer transformers versions may return a dataclass instead of a tensor
+            if not isinstance(embeddings, torch.Tensor):
+                embeddings = self.model.visual_projection(embeddings.pooler_output)
             embeddings = self._normalize(embeddings)
             all_embeddings.append(embeddings.cpu().numpy())
         return np.vstack(all_embeddings).astype("float32")
@@ -137,6 +140,9 @@ class CLIPEmbedder:
             inputs = self.processor(text=batch, return_tensors="pt", padding=True, truncation=True)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
             embeddings = self.model.get_text_features(**inputs)
+            # Newer transformers versions may return a dataclass instead of a tensor
+            if not isinstance(embeddings, torch.Tensor):
+                embeddings = self.model.text_projection(embeddings.pooler_output)
             embeddings = self._normalize(embeddings)
             all_embeddings.append(embeddings.cpu().numpy())
         return np.vstack(all_embeddings).astype("float32")
