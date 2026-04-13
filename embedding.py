@@ -105,11 +105,12 @@ class CLIPEmbedder:
             extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif", ".tiff"}
 
         folder = Path(folder)
+        # rglob("*") recurses into subfolders (e.g. images/airplane/*.png)
         image_paths = sorted(
-            p for p in folder.iterdir() if p.suffix.lower() in extensions
+            p for p in folder.rglob("*") if p.suffix.lower() in extensions
         )
         if not image_paths:
-            raise FileNotFoundError(f"No images found in '{folder}'")
+            raise FileNotFoundError(f"No images found in '{folder}' (searched recursively)")
 
         images = [Image.open(p).convert("RGB") for p in tqdm(image_paths, desc="Loading images")]
         embeddings = self.encode_images(images, batch_size=batch_size)

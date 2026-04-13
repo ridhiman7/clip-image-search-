@@ -79,6 +79,17 @@ with col_left:
     st.markdown("---")
     st.caption(f"Index size: **{engine.index_size()} images**")
 
+    # Show class breakdown if images are in subfolders
+    images_root = Path(IMAGE_DIR)
+    if images_root.exists():
+        class_dirs = sorted([d for d in images_root.iterdir() if d.is_dir()])
+        if class_dirs:
+            st.markdown("**Classes in index:**")
+            for d in class_dirs:
+                count = len([f for f in d.iterdir() if f.suffix.lower() in
+                             {".jpg", ".jpeg", ".png", ".bmp", ".webp"}])
+                st.caption(f"• {d.name}: {count} images")
+
 # ------------------------------------------------------------------
 # Results
 # ------------------------------------------------------------------
@@ -108,9 +119,13 @@ with col_right:
                         st.image(img, use_column_width=True)
                     except Exception:
                         st.error("Could not load image")
+                    p = Path(result.image_path)
+                    # Show class label: use parent folder name if it's a class subfolder,
+                    # otherwise fall back to the filename stem prefix (e.g. "airplane_0001")
+                    class_label = p.parent.name if p.parent.name != "images" else p.stem.rsplit("_", 1)[0]
                     st.caption(
                         f"**#{result.rank}** · score `{result.score:.4f}`\n\n"
-                        f"`{Path(result.image_path).name}`"
+                        f"Class: **{class_label}** · `{p.name}`"
                     )
     else:
         st.info("Enter a query on the left and click **Search**.")
