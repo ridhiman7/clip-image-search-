@@ -4,7 +4,8 @@
       "Bash(python prepare_cifar10.py)",
       "Bash(conda activate:*)",
       "Bash(python -c \"import torch; print\\(torch.__version__\\)\")",
-      "Bash(conda env:*)"
+      "Bash(conda env:*)",
+      "Bash(python -c ':*)"
     ]
   }
 }
