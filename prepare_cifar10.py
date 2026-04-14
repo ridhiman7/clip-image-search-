@@ -33,11 +33,14 @@ CIFAR10_CLASSES = [
     "dog", "frog", "horse", "ship", "truck"
 ]
 
+# CIFAR-10 images are 32×32. Upscale to this size so they look sharp in the UI.
+DISPLAY_SIZE = (224, 224)
+
 
 def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
     """
     Download CIFAR-10 (train split) and save `per_class` images per class
-    as PNG files.
+    as PNG files, upscaled to 224×224 using high-quality LANCZOS resampling.
 
     Args:
         per_class:   How many images to save per class.
@@ -56,7 +59,7 @@ def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
     saved_total = 0
     target_per_class = per_class
 
-    print(f"[cifar10] Saving {per_class} images per class → '{output_dir}' ...")
+    print(f"[cifar10] Saving {per_class} images per class → '{output_dir}' (resized to {DISPLAY_SIZE[0]}×{DISPLAY_SIZE[1]}) ...")
 
     for img_pil, label in dataset:
         if class_counts[label] >= target_per_class:
@@ -73,7 +76,9 @@ def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
 
         filename = f"{class_name}_{idx:04d}.png"
-        img_pil.save(save_dir / filename)
+        # Upscale from 32×32 to DISPLAY_SIZE using LANCZOS for sharp results
+        img_resized = img_pil.resize(DISPLAY_SIZE, Image.LANCZOS)
+        img_resized.save(save_dir / filename)
 
         class_counts[label] += 1
         saved_total += 1
@@ -82,7 +87,7 @@ def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
         if all(c >= target_per_class for c in class_counts.values()):
             break
 
-    print(f"[cifar10] Done! Saved {saved_total} images total.")
+    print(f"[cifar10] Done! Saved {saved_total} images total (each resized to {DISPLAY_SIZE[0]}×{DISPLAY_SIZE[1]}).")
     print(f"[cifar10] Class breakdown:")
     for i, name in enumerate(CIFAR10_CLASSES):
         print(f"          {name:12s}: {class_counts[i]} images")
@@ -111,7 +116,15 @@ def main():
         "--flat", action="store_true",
         help="Save all images flat in output_dir instead of per-class subfolders"
     )
+    parser.add_argument(
+        "--size", type=int, default=224,
+        help="Pixel size to upscale images to (default: 224). "
+             "CIFAR-10 images are 32×32; larger values look sharper in the UI."
+    )
     args = parser.parse_args()
+
+    global DISPLAY_SIZE
+    DISPLAY_SIZE = (args.size, args.size)
 
     save_subset(
         per_class=args.per_class,
