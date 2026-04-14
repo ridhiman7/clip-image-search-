@@ -24,7 +24,7 @@ python prepare_cifar10.py --flat
 import argparse
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageFilter, ImageEnhance
 from torchvision.datasets import CIFAR10
 
 
@@ -35,6 +35,33 @@ CIFAR10_CLASSES = [
 
 # CIFAR-10 images are 32×32. Upscale to this size so they look sharp in the UI.
 DISPLAY_SIZE = (224, 224)
+
+
+def upscale_clean(img: Image.Image, target: tuple[int, int]) -> Image.Image:
+    """
+    Upscale a tiny CIFAR-10 image (32×32) to `target` size cleanly.
+
+    Pipeline:
+      1. Slight Gaussian blur on the raw 32×32 image — smooths harsh pixel
+         block edges before they get magnified.
+      2. LANCZOS upscale — best-quality resampling filter.
+      3. Unsharp mask — sharpens real edges without amplifying noise.
+      4. Mild contrast/colour boost — counters the slight wash-out from step 1.
+    """
+    # Step 1 – tame pixel-block noise at source resolution
+    img = img.filter(ImageFilter.GaussianBlur(radius=0.6))
+
+    # Step 2 – high-quality upscale
+    img = img.resize(target, Image.LANCZOS)
+
+    # Step 3 – unsharp mask: radius=2, strength=120%, edge threshold=3
+    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=120, threshold=3))
+
+    # Step 4 – slight contrast/saturation recovery
+    img = ImageEnhance.Contrast(img).enhance(1.1)
+    img = ImageEnhance.Color(img).enhance(1.1)
+
+    return img
 
 
 def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
@@ -76,8 +103,7 @@ def save_subset(per_class: int, output_dir: str, flat: bool) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
 
         filename = f"{class_name}_{idx:04d}.png"
-        # Upscale from 32×32 to DISPLAY_SIZE using LANCZOS for sharp results
-        img_resized = img_pil.resize(DISPLAY_SIZE, Image.LANCZOS)
+        img_resized = upscale_clean(img_pil, DISPLAY_SIZE)
         img_resized.save(save_dir / filename)
 
         class_counts[label] += 1
