@@ -2,7 +2,7 @@
 torch==2.2.2+cpu
 torchvision==0.17.2+cpu
 transformers>=4.35.0,<4.46.0
-faiss-cpu==1.7.4
+faiss-cpu>=1.7.4
 Pillow>=10.0.0
 numpy>=1.24.0,<2.0.0
 tqdm>=4.65.0
