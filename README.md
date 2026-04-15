@@ -44,7 +44,7 @@ Because CLIP is trained on 400M image-text pairs, text and images live in the sa
 - **Text-to-image search** — describe what you're looking for in plain English
 - **Image-to-image search** — upload a photo to find visually similar results
 - **FAISS vector index** — supports Flat (exact), IVF, and IVFPQ index types
-- **CIFAR-10 dataset pipeline** — automated download, subset, and class-organised storage
+- **STL-10 dataset pipeline** — automated download, subset, and class-organised storage at 224×224
 - **Streamlit web UI** — live result grid with similarity scores and class labels
 - **Evaluation metrics** — Precision@k, Recall@k, mAP@k, Hit Rate@k
 
@@ -57,7 +57,7 @@ Because CLIP is trained on 400M image-text pairs, text and images live in the sa
 | Vision-language model | OpenAI CLIP (ViT-B/32) via HuggingFace Transformers |
 | Vector index | FAISS (faiss-cpu) |
 | Deep learning | PyTorch |
-| Dataset | CIFAR-10 via torchvision |
+| Dataset | STL-10 via torchvision (96×96, ImageNet-derived) |
 | Web interface | Streamlit |
 | Image processing | Pillow |
 
@@ -68,17 +68,19 @@ Because CLIP is trained on 400M image-text pairs, text and images live in the sa
 ```
 ├── app.py                # Streamlit web interface
 ├── main.py               # CLI: build index and run demo queries
-├── prepare_cifar10.py    # Download and subset CIFAR-10 into ./images/
+├── prepare_stl10.py      # Download and subset STL-10 into ./images/ (224×224)
+├── prepare_cifar10.py    # Legacy: CIFAR-10 pipeline (32×32, kept for reference)
 ├── embedding.py          # CLIP image and text encoder (CLIPEmbedder)
 ├── index.py              # FAISS index wrapper (build, search, save, load)
 ├── search.py             # High-level search engine (text + image queries)
 ├── data_loader.py        # PyTorch Dataset and DataLoader for image folders
 ├── evaluate.py           # IR metrics: P@k, R@k, mAP@k, HitRate@k
+├── colab_notebook.ipynb  # End-to-end Colab notebook
 ├── requirements.txt
-├── images/               # Dataset images (created by prepare_cifar10.py)
+├── images/               # Dataset images (created by prepare_stl10.py)
 │   ├── airplane/
-│   ├── automobile/
 │   ├── bird/
+│   ├── car/
 │   └── ...
 └── index/                # Saved FAISS index (created by main.py --mode build)
     ├── faiss.index
@@ -97,8 +99,8 @@ cd <your-repo-name>
 
 pip install -r requirements.txt
 
-# 1. Download CIFAR-10 and save a subset as images
-python prepare_cifar10.py --per_class 10
+# 1. Download STL-10 and save a subset as images (224x224, sharp)
+python prepare_stl10.py --per_class 10
 
 # 2. Build the FAISS index
 python main.py --image_dir ./images --mode build
@@ -119,60 +121,56 @@ Open `http://localhost:8501` in your browser.
 %cd <your-repo-name>
 !pip install -r requirements.txt -q
 
-# Cell 2 — prepare dataset
-!python prepare_cifar10.py --per_class 10
+# Cell 2 — prepare dataset (STL-10, 10 images/class)
+!python prepare_stl10.py --per_class 10
 
 # Cell 3 — build index
 !python main.py --image_dir ./images --mode build
 
-# Cell 4 — install cloudflared tunnel
-!wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-!dpkg -i cloudflared-linux-amd64.deb -q
+# Cell 4 — install localtunnel
+!npm install -g localtunnel -q
 
 # Cell 5 — launch Streamlit and get public URL
-import subprocess, time, re
+import subprocess, time
 
 subprocess.Popen(
     ['streamlit', 'run', 'app.py', '--server.port', '8501', '--server.headless', 'true'],
     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
 )
-time.sleep(4)
+time.sleep(3)
 
-proc = subprocess.Popen(
-    ['cloudflared', 'tunnel', '--url', 'http://localhost:8501'],
-    stdout=subprocess.PIPE, stderr=subprocess.PIPE
-)
-time.sleep(6)
+# Print your external IP — enter this as the password if localtunnel asks
+!curl -s https://ipv4.icanhazip.com
 
-output = proc.stderr.read1(8192).decode()
-url = re.search(r'https://[^\s]+\.trycloudflare\.com', output)
-if url:
-    print("Open this URL:", url.group())
+# Get your public URL
+!lt --port 8501
 ```
 
 ---
 
 ## Dataset
 
-Uses a subset of **CIFAR-10** — 10 classes, configurable images per class.
+Uses a subset of **STL-10** — 10 classes, 96×96 native resolution (ImageNet-derived), saved at 224×224 using LANCZOS upscaling for sharp display.
 
-| Class | Examples |
+| Class | Description |
 |---|---|
-| airplane, automobile, bird, cat, deer | transport and animals |
-| dog, frog, horse, ship, truck | animals and vehicles |
+| airplane, bird, ship | transport and wildlife |
+| car, truck | vehicles |
+| cat, dog, horse, deer, monkey | animals |
 
 ```bash
 # 10 images per class (100 total) — default
-python prepare_cifar10.py --per_class 10
+python prepare_stl10.py --per_class 10
 
 # 50 images per class (500 total)
-python prepare_cifar10.py --per_class 50
+python prepare_stl10.py --per_class 50
+
+# Keep native 96×96 resolution (no upscale)
+python prepare_stl10.py --size 96
 
 # All in one flat folder instead of subfolders
-python prepare_cifar10.py --per_class 10 --flat
+python prepare_stl10.py --per_class 10 --flat
 ```
-
-CIFAR-10 images are 32×32px — they will appear pixelated when displayed at large sizes. This is a property of the dataset, not the search engine.
 
 ---
 
@@ -213,7 +211,7 @@ faiss-cpu>=1.7.4
 Pillow>=10.0.0
 numpy>=1.24.0
 tqdm>=4.65.0
-streamlit>=1.28.0
+streamlit>=1.32.0
 matplotlib>=3.7.0
 scikit-learn>=1.3.0
 ```
