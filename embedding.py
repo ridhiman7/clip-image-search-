@@ -93,28 +93,59 @@ class CLIPEmbedder:
 
     @torch.no_grad()
     def encode_image_folder(
-        self, folder: str, batch_size: int = 64, extensions=None
+        self, folder: str, batch_size: int = 64, extensions=None,
+        cache_path: str = None,
     ) -> tuple:
         """
         Encode all images in a folder.
 
+        If `cache_path` is provided and a valid cache exists for the exact
+        same set of images, embeddings are loaded from disk instead of
+        re-running CLIP — making index rebuilds near-instant.
+
         Returns:
             (embeddings np.ndarray, image_paths list[str])
         """
+        import pickle
+
         if extensions is None:
             extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif", ".tiff"}
 
         folder = Path(folder)
-        # rglob("*") recurses into subfolders (e.g. images/airplane/*.png)
         image_paths = sorted(
             p for p in folder.rglob("*") if p.suffix.lower() in extensions
         )
         if not image_paths:
             raise FileNotFoundError(f"No images found in '{folder}' (searched recursively)")
 
+        str_paths = [str(p) for p in image_paths]
+
+        # --- Try loading from cache ---
+        if cache_path:
+            cache_emb = Path(cache_path + ".npy")
+            cache_meta = Path(cache_path + ".pkl")
+            if cache_emb.exists() and cache_meta.exists():
+                with open(cache_meta, "rb") as f:
+                    cached_paths = pickle.load(f)
+                if cached_paths == str_paths:
+                    print(f"[CLIPEmbedder] Cache hit — loading embeddings from '{cache_emb}'")
+                    return np.load(str(cache_emb)), str_paths
+                else:
+                    print("[CLIPEmbedder] Cache mismatch (images changed) — re-encoding ...")
+
+        # --- Encode ---
         images = [Image.open(p).convert("RGB") for p in tqdm(image_paths, desc="Loading images")]
         embeddings = self.encode_images(images, batch_size=batch_size)
-        return embeddings, [str(p) for p in image_paths]
+
+        # --- Save cache ---
+        if cache_path:
+            Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+            np.save(cache_path + ".npy", embeddings)
+            with open(cache_path + ".pkl", "wb") as f:
+                pickle.dump(str_paths, f)
+            print(f"[CLIPEmbedder] Embeddings cached to '{cache_path}'")
+
+        return embeddings, str_paths
 
     # ------------------------------------------------------------------
     # Text encoding

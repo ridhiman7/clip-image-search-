@@ -89,6 +89,20 @@ Because CLIP is trained on 400M image-text pairs, text and images live in the sa
 
 ---
 
+## Deployment — Streamlit Community Cloud (public URL)
+
+Get a permanent public URL anyone can visit — free, no server needed.
+
+1. Push this repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub
+3. Click **New app** → select your repo → set main file to `app.py` → click **Deploy**
+4. On first launch the app automatically downloads STL-10 and builds the index (takes ~3 min)
+5. You get a permanent URL: `https://yourname-yourrepo-app.streamlit.app`
+
+No manual setup needed — the app bootstraps itself.
+
+---
+
 ## Setup
 
 ### Local

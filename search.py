@@ -9,6 +9,7 @@ Provides two query modes:
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -66,6 +67,9 @@ class ImageSearchEngine:
         """
         End-to-end pipeline: load images → embed → build index → save.
 
+        Embeddings are cached alongside the index so subsequent rebuilds
+        skip CLIP inference entirely if the image set hasn't changed.
+
         Args:
             image_dir:  Folder containing images to index.
             index_dir:  Where to persist the FAISS index.
@@ -75,9 +79,12 @@ class ImageSearchEngine:
         """
         embedder = CLIPEmbedder(model_name=model_name)
 
-        # Generate embeddings for every image in the folder
+        # Cache path lives inside index_dir so it's saved/loaded together
+        cache_path = str(Path(index_dir) / "embeddings_cache")
+
+        # Generate (or load cached) embeddings for every image in the folder
         embeddings, image_paths = embedder.encode_image_folder(
-            image_dir, batch_size=batch_size
+            image_dir, batch_size=batch_size, cache_path=cache_path
         )
 
         # Build and persist FAISS index
